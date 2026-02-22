@@ -13,7 +13,22 @@ init_db()
 create_default_users()
 
 st.set_page_config(page_title="Water Metro Safety", layout="wide")
+st.markdown(f"""
+<style>
+/* Hide Creator UI and Streamlit Branding */
+header {{visibility: hidden;}}
+footer {{visibility: hidden;}}
+#MainMenu {{visibility: hidden;}}
+.stDeployButton {{display:none;}}
 
+/* Your existing colors */
+.stApp {{
+    background-color: #0e1b2a;
+    color: white;
+}}
+/* ... rest of your CSS ... */
+</style>
+""", unsafe_allow_html=True)
 # -----------------------------
 # 2. THEME & COLOR CUSTOMIZATION
 # -----------------------------
