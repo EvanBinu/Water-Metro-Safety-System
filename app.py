@@ -243,4 +243,4 @@ else:
                 st.info(result)
 
         else:
-            st.info("No safety logs found in the database.")
+            st.info("No safety logs found in the database.  ")
