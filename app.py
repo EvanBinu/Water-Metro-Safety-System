@@ -14,10 +14,26 @@ init_db()
 create_default_users()
 
 st.set_page_config(page_title="Water Metro Safety", layout="wide")
+# Change this line in your code:
+col1, col2 = st.columns([1, 5])
 
-st.title("🌊 Water Metro Safety System ")
+with col1:
+    try:
+        # Change this line in your code:
+        st.image("assets/KMRL-logo.png", caption="KOCHI METRO RAIL LIMITED", width=150)
+    except Exception:
+        st.error("Logo not found")
 
+with col2:
+    # Markdown for better vertical alignment and subtitle
+    st.markdown("""
+        <div style="padding-top: 10px;">
+            <h1 style="margin-bottom: 0px;">Water Metro Safety System</h1>
 
+        </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("---")
 # -----------------------------
 # Session State
 # -----------------------------
@@ -65,7 +81,20 @@ else:
 
         terminal = st.selectbox(
             "Terminal",
-            ["High Court", "Vyttila", "Kakkanad", "Fort Kochi"]
+            [
+                "High Court", 
+                "Vyttila", 
+                "Kakkanad", 
+                "Fort Kochi", 
+                "Vypin", 
+                "Bolgatty", 
+                "South Chittoor", 
+                "Cheranallur", 
+                "Eloor", 
+                "Mulavukad North", 
+                "Willingdon Island", 
+                "Mattancherry"
+            ]
         )
 
         incident_type = st.selectbox(
