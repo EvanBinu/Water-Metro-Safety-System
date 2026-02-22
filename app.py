@@ -17,14 +17,30 @@ st.set_page_config(page_title="Water Metro Safety", layout="wide")
 # -----------------------------
 # 2. THEME & COLOR CUSTOMIZATION
 # -----------------------------
-hide_st_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            </style>
-            """
-st.markdown(hide_st_style, unsafe_allow_html=True)
+st.markdown("""
+    <style>
+    /* 1. Hide the Streamlit Header and Footer */
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* 2. Hide the Main Menu (Hamburger menu) */
+    #MainMenu {visibility: hidden;}
+    
+    /* 3. Hide the Sidebar "Created by" profile and Streamlit logo */
+    [data-testid="stSidebarNav"] + div {display: none;}
+    [data-testid="stSidebarFooter"] {display: none;}
+    
+    /* 4. Hide the "Deploy" button and other cloud-specific decorations */
+    .stDeployButton {display:none;}
+    .st-emotion-cache-1647it7 {display: none;} /* This targets the specific viewer badge */
+
+    /* Optional: Remove top padding so the app starts at the very top */
+    .block-container {
+        padding-top: 0rem;
+        padding-bottom: 0rem;
+    }
+    </style>
+""", unsafe_allow_html=True)
 st.markdown(f"""
 <style>
 .stApp {{
