@@ -1,12 +1,9 @@
+import streamlit as st
 from openai import OpenAI
-import os
-from dotenv import load_dotenv
 from collections import Counter
 
-load_dotenv()
-
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-
+# 1. Access the key correctly from Streamlit secrets
+GROQ_API_KEY = st.secrets.get("GROQ_API_KEY")
 
 def local_analysis(incidents):
     if not incidents:
@@ -28,54 +25,59 @@ def local_analysis(incidents):
 
     return report
 
-
 def analyze_incidents(incidents):
-
     if not GROQ_API_KEY:
-        return "❌ GROQ_API_KEY not found in .env file."
+        return "❌ GROQ_API_KEY not found in Streamlit secrets."
+
+    if not incidents:
+        return "No incidents recorded."
 
     try:
-        # Create Groq-compatible OpenAI client
         client = OpenAI(
             api_key=GROQ_API_KEY,
             base_url="https://api.groq.com/openai/v1"
         )
 
-        if not incidents:
-            return "No incidents recorded."
+        # Better data formatting for the LLM to parse
+        formatted_data = ""
+        for i, row in enumerate(incidents, 1):
+            formatted_data += f"{i}. [Terminal: {row[1]}] [Type: {row[2]}] [Severity: {row[3]}] - Obs: {row[4]}\n"
 
-        formatted_data = "\n".join([
-            f"Terminal: {row[1]} | Type: {row[2]} | Severity: {row[3]} | Description: {row[4]}"
-            for row in incidents
-        ])
-
+        # The Enhanced Prompt
         prompt = f"""
-You are a professional marine safety analyst.
+        # ROLE
+        You are a Senior Marine Safety Auditor and Risk Management Expert. 
 
-Analyze the following incident dataset.
+        # DATASET
+        {formatted_data}
 
-Provide:
-1. Terminal risk ranking
-2. Recurring patterns
-3. Severity distribution insight
-4. Root cause hypothesis
-5. Operational risk level
-6. Clear actionable recommendations
+        # TASK
+        Conduct a comprehensive safety audit based on the incident logs provided above. 
+        Your goal is to identify systemic failures rather than just listing individual events.
 
-Dataset:
-{formatted_data}
-"""
+        # RESPONSE REQUIREMENTS
+        1. **Terminal Risk Matrix**: Rank terminals by risk (Critical > High > Medium).
+        2. **Pattern Recognition**: Identify clusters (e.g., Are 'High' severity events happening at one specific terminal? Is one 'Type' of incident recurring?).
+        3. **Severity Analysis**: Break down the distribution of severity levels.
+        4. **Root Cause Hypothesis**: Use the '5 Whys' logic to suggest the likely underlying cause (e.g., infrastructure fatigue, training gaps, or environmental factors).
+        5. **Operational Risk Level**: Assign an overall fleet safety score (Low, Elevated, High, or Immediate Action Required).
+        6. **Actionable Mitigation Plan**: Provide 3 specific, prioritized steps to reduce future risk.
+
+        # FORMATTING
+        Use professional Markdown, bold key terms, and bullet points for readability.
+        """
 
         response = client.chat.completions.create(
-            model="openai/gpt-oss-120b",  # Use this smaller model first (more stable)
+            model="llama-3.3-70b-versatile", 
             messages=[
-                {"role": "system", "content": "You are an expert safety operations analyst."},
+                {"role": "system", "content": "You provide high-level maritime safety intelligence and technical risk assessments."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.2,
+            temperature=0.1, # Lowered for more consistent, analytical output
         )
 
         return response.choices[0].message.content
 
     except Exception as e:
-        return f"❌ Groq API Error:\n\n{str(e)}"
+        st.warning("Groq API failed. Providing local summary instead.")
+        return f"{local_analysis(incidents)}\n\n(Error Detail: {str(e)})"
