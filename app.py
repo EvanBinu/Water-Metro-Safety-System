@@ -47,17 +47,17 @@ h1, h2, h3, p, label, .stMarkdown {{
 }}
 
 /* Metrics Styling */
-div[data-testid="stMetricValue"] > div {{
-    color: #a2ffff !important;
-    font-weight: 800;
-}}
+# div[data-testid="stMetricValue"] > div {{
+#     color: #a2ffff !important;
+#     font-weight: 800;
+# }}
 
 /* Input Fields */
-input, textarea, select {{
-    background-color: #ffffff !important;
-    color: #0e1b2a !important;
-    border-radius: 5px !important;
-}}
+# input, textarea, select {{
+#     background-color: #ffffff !important;
+#     color: #0e1b2a !important;
+#     border-radius: 5px !important;
+# }}
 
 /* Incident Cards (Glassmorphism Effect) */
 .incident-card {{
@@ -77,7 +77,7 @@ hr {{
 /* This targets the container for the popover */
 div[data-testid="stPopover"] {{
     position: fixed;
-    bottom: 30px;
+    bottom: 70px;
     right: 30px;
     z-index: 1000;
     width: 65px;
