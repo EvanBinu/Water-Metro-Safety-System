@@ -6,6 +6,7 @@ from collections import Counter
 GROQ_API_KEY = st.secrets.get("GROQ_API_KEY")
 
 def local_analysis(incidents):
+    """Fallback logic to provide basic stats if the AI API fails."""
     if not incidents:
         return "No incidents recorded."
 
@@ -26,6 +27,7 @@ def local_analysis(incidents):
     return report
 
 def analyze_incidents(incidents):
+    """Deep audit model to identify systemic failures from existing logs."""
     if not GROQ_API_KEY:
         return "❌ GROQ_API_KEY not found in Streamlit secrets."
 
@@ -38,12 +40,12 @@ def analyze_incidents(incidents):
             base_url="https://api.groq.com/openai/v1"
         )
 
-        # Better data formatting for the LLM to parse
+        # Formatting data for the LLM to parse
         formatted_data = ""
         for i, row in enumerate(incidents, 1):
             formatted_data += f"{i}. [Terminal: {row[1]}] [Type: {row[2]}] [Severity: {row[3]}] - Obs: {row[4]}\n"
 
-        # The Enhanced Prompt
+        # The Enhanced Audit Prompt
         prompt = f"""
         # ROLE
         You are a Senior Marine Safety Auditor and Risk Management Expert. 
@@ -57,14 +59,14 @@ def analyze_incidents(incidents):
 
         # RESPONSE REQUIREMENTS
         1. **Terminal Risk Matrix**: Rank terminals by risk (Critical > High > Medium).
-        2. **Pattern Recognition**: Identify clusters (e.g., Are 'High' severity events happening at one specific terminal? Is one 'Type' of incident recurring?).
+        2. **Pattern Recognition**: Identify clusters.
         3. **Severity Analysis**: Break down the distribution of severity levels.
-        4. **Root Cause Hypothesis**: Use the '5 Whys' logic to suggest the likely underlying cause (e.g., infrastructure fatigue, training gaps, or environmental factors).
-        5. **Operational Risk Level**: Assign an overall fleet safety score (Low, Elevated, High, or Immediate Action Required).
+        4. **Root Cause Hypothesis**: Use the '5 Whys' logic to suggest the likely underlying cause.
+        5. **Operational Risk Level**: Assign an overall fleet safety score.
         6. **Actionable Mitigation Plan**: Provide 3 specific, prioritized steps to reduce future risk.
 
         # FORMATTING
-        Use professional Markdown, bold key terms, and bullet points for readability.
+        Use professional Markdown, bold key terms, and bullet points.
         """
 
         response = client.chat.completions.create(
@@ -73,7 +75,7 @@ def analyze_incidents(incidents):
                 {"role": "system", "content": "You provide high-level maritime safety intelligence and technical risk assessments."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.1, # Lowered for more consistent, analytical output
+            temperature=0.1, # Low temperature for consistent analytical output
         )
 
         return response.choices[0].message.content
@@ -83,7 +85,7 @@ def analyze_incidents(incidents):
         return f"{local_analysis(incidents)}\n\n(Error Detail: {str(e)})"
 
 def get_safety_chatbot_response(user_query):
-    """General purpose chatbot for workplace safety and security."""
+    """General purpose conversational advisor for work site safety and security."""
     if not GROQ_API_KEY:
         return "❌ GROQ_API_KEY not found in Streamlit secrets."
 
@@ -115,7 +117,7 @@ def get_safety_chatbot_response(user_query):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_query}
             ],
-            temperature=0.7,
+            temperature=0.7, # Higher temperature for more conversational helpfulness
         )
 
         return response.choices[0].message.content

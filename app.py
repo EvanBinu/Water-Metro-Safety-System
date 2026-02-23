@@ -73,16 +73,18 @@ hr {{
     border-color: rgba(162, 255, 255, 0.2) !important;
 }}
 
-/* FLOATING CHATBOT ICON CSS */
-.floating-chat {{
+/* FLOATING CHATBOT POSITIONING */
+/* This targets the container for the popover */
+div[data-testid="stPopover"] {{
     position: fixed;
     bottom: 30px;
     right: 30px;
     z-index: 1000;
+    width: 65px;
 }}
 
 /* Styling the popover button to look like a teal chat bubble */
-button[data-testid="stBaseButton-popover"] {{
+div[data-testid="stPopover"] > button {{
     border-radius: 50% !important;
     width: 65px !important;
     height: 65px !important;
@@ -94,6 +96,28 @@ button[data-testid="stBaseButton-popover"] {{
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    margin: 0 !important;
+}}
+
+/* Adjust the popup window to open upwards from the button */
+div[data-testid="stPopoverBody"] {{
+    position: absolute !important;
+    bottom: 80px !important;
+    left: 0px !important;    /* Keeps it aligned to your left-side button */
+    right: auto !important;
+
+    /* DYNAMIC SIZING PROPERTIES */
+    width: auto !important;      /* Allows width to shrink-to-fit content */
+    min-width: 250px !important; /* Prevents it from being too skinny */
+    max-width: 450px !important; /* Prevents it from covering the whole screen */
+    
+    height: auto !important; 
+    min-height: 250px !important;    /* Allows height to grow with content */
+    max-height: 500px !important;/* Adds a scrollbar if content is too long */
+    
+    overflow-y: auto !important; /* Enables scrolling for long content */
+    display: flex !important;
+    flex-direction: column !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -233,7 +257,7 @@ else:
                 st.markdown(card_html, unsafe_allow_html=True)
 
             # --- 4. FLOATING CHATBOT ICON ---
-            st.markdown('<div class="floating-chat">', unsafe_allow_html=True)
+            # The div wrapper is no longer strictly needed because CSS targets stPopover directly
             with st.popover("💬"):
                 st.markdown("### 💬 Safety Advisor")
                 st.caption("General Work Site Safety & Security Assistant")
@@ -255,7 +279,6 @@ else:
                             response = get_safety_chatbot_response(prompt)
                             st.markdown(response)
                     st.session_state.messages.append({"role": "assistant", "content": response})
-            st.markdown('</div>', unsafe_allow_html=True)
 
             # AI Audit Button
             st.markdown("---")
