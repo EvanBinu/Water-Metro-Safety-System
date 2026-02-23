@@ -3,4 +3,3 @@ openai
 pandas
 python-dotenv
 plotly
-os
