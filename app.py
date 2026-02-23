@@ -22,12 +22,12 @@ st.set_page_config(page_title="Water Metro Safety", layout="wide")
 st.markdown(f"""
 <style>
 /* Hide Streamlit Branding & Creator Profile */
-header {{visibility: hidden;}}
-footer {{visibility: hidden;}}
-#MainMenu {{visibility: hidden;}}
-[data-testid="stSidebarNav"] + div {{display: none;}}
-[data-testid="stSidebarFooter"] {{display: none;}}
-.stDeployButton {{display:none;}}
+# header {{visibility: hidden;}}
+# footer {{visibility: hidden;}}
+# #MainMenu {{visibility: hidden;}}
+# [data-testid="stSidebarNav"] + div {{display: none;}}
+# [data-testid="stSidebarFooter"] {{display: none;}}
+# .stDeployButton {{display:none;}}
 
 /* Main App Background - Deep Midnight Blue */
 .stApp {{
