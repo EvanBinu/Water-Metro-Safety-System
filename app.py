@@ -5,7 +5,8 @@ import plotly.express as px
 
 from database import init_db, insert_incident, get_all_incidents
 from auth import create_default_users, login
-from ai_analysis import analyze_incidents
+# Ensure get_safety_chatbot_response is imported from your ai_analysis file
+from ai_analysis import analyze_incidents, get_safety_chatbot_response
 
 # -----------------------------
 # 1. Initialize System
@@ -16,7 +17,7 @@ create_default_users()
 st.set_page_config(page_title="Water Metro Safety", layout="wide")
 
 # -----------------------------
-# 2. THEME, DE-BRANDING & COLORS
+# 2. THEME, DE-BRANDING & FLOATING CHAT CSS
 # -----------------------------
 st.markdown(f"""
 <style>
@@ -70,6 +71,29 @@ input, textarea, select {{
 /* Horizontal Line */
 hr {{
     border-color: rgba(162, 255, 255, 0.2) !important;
+}}
+
+/* FLOATING CHATBOT ICON CSS */
+.floating-chat {{
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 1000;
+}}
+
+/* Styling the popover button to look like a teal chat bubble */
+button[data-testid="stBaseButton-popover"] {{
+    border-radius: 50% !important;
+    width: 65px !important;
+    height: 65px !important;
+    background-color: #a2ffff !important;
+    color: #0e1b2a !important;
+    border: none !important;
+    box-shadow: 0px 4px 15px rgba(162, 255, 255, 0.4) !important;
+    font-size: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -157,56 +181,35 @@ else:
         if incidents:
             df = pd.DataFrame(incidents, columns=["ID", "Terminal", "Incident Type", "Severity", "Description", "Action Taken", "Date"])
 
-            # --- 1. ENHANCED KPI METRICS ---
+            # --- 1. KPI METRICS ---
             m1, m2, m3, m4 = st.columns(4)
             m1.metric("Total Logs", len(df))
             m2.metric("Critical Alerts", len(df[df["Severity"] == "Critical"]))
-            
-            # Simple Safety Score logic
             score = 100 - (len(df[df['Severity'] == 'Critical']) * 10)
             m3.metric("Safety Score", f"{max(score, 0)}%")
             
-            # Export Feature
             csv = df.to_csv(index=False).encode('utf-8')
-            m4.download_button(
-                label="📥 Export Data",
-                data=csv,
-                file_name=f'KMRL_Audit_{datetime.date.today()}.csv',
-                mime='text/csv',
-            )
+            m4.download_button("📥 Export CSV", data=csv, file_name=f'KMRL_Audit_{datetime.date.today()}.csv', mime='text/csv')
 
             st.markdown("---")
             
             # --- 2. INTERACTIVE ANALYTICS ---
             st.write("### 📈 Visual Risk Analytics")
             g_col1, g_col2 = st.columns(2)
-            
             with g_col1:
-                terminal_data = df["Terminal"].value_counts().reset_index()
-                terminal_data.columns = ["Terminal", "Count"]
-                
-                fig_terminal = px.bar(
-                    terminal_data, x="Terminal", y="Count",
-                    title="Incidents by Terminal",
-                    color_discrete_sequence=['#a2ffff'],
-                    template="plotly_dark"
-                )
-                fig_terminal.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-                st.plotly_chart(fig_terminal, use_container_width=True)
+                t_data = df["Terminal"].value_counts().reset_index()
+                t_data.columns = ["Terminal", "Count"]
+                fig_t = px.bar(t_data, x="Terminal", y="Count", title="Incidents by Terminal", color_discrete_sequence=['#a2ffff'], template="plotly_dark")
+                fig_t.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                st.plotly_chart(fig_t, use_container_width=True)
             
             with g_col2:
-                sev_data = df["Severity"].value_counts().reset_index()
-                sev_data.columns = ["Severity", "Count"]
-                color_map = {"Critical": "#ff4d4d", "High": "#ffa31a", "Medium": "#33ccff", "Low": "#70db70"}
-                
-                fig_sev = px.pie(
-                    sev_data, values="Count", names="Severity",
-                    title="Risk Level Distribution",
-                    hole=0.5, color="Severity", color_discrete_map=color_map,
-                    template="plotly_dark"
-                )
-                fig_sev.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-                st.plotly_chart(fig_sev, use_container_width=True)
+                s_data = df["Severity"].value_counts().reset_index()
+                s_data.columns = ["Severity", "Count"]
+                c_map = {"Critical": "#ff4d4d", "High": "#ffa31a", "Medium": "#33ccff", "Low": "#70db70"}
+                fig_s = px.pie(s_data, values="Count", names="Severity", title="Risk Distribution", hole=0.5, color="Severity", color_discrete_map=c_map, template="plotly_dark")
+                fig_s.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                st.plotly_chart(fig_s, use_container_width=True)
 
             st.markdown("---")
 
@@ -214,18 +217,13 @@ else:
             terminal_filter = st.selectbox("Filter Feed by Location", ["Show All Terminals"] + list(df["Terminal"].unique()))
             display_df = df if terminal_filter == "Show All Terminals" else df[df["Terminal"] == terminal_filter]
 
-            st.write(f"### 📋 Incident Feed ({len(display_df)} Reports)")
             for _, row in display_df.iterrows():
                 sev_color = {"Critical": "#ff4d4d", "High": "#ffa31a", "Medium": "#33ccff", "Low": "#70db70"}.get(row["Severity"], "white")
-                
-                # HTML block with zero indentation to prevent </div> showing as text
                 card_html = f"""
 <div class="incident-card">
 <h3 style="margin:0; color: #a2ffff !important;">🏢 {row['Terminal']}</h3>
 <p style="margin:5px 0; font-size: 0.9em;">
-<b>TYPE:</b> {row['Incident Type']} | 
-<b>SEVERITY:</b> <span style="color:{sev_color}; font-weight:bold;">{row['Severity'].upper()}</span> | 
-<b>DATE:</b> {row['Date'][:10]}
+<b>TYPE:</b> {row['Incident Type']} | <b>SEVERITY:</b> <span style="color:{sev_color}; font-weight:bold;">{row['Severity'].upper()}</span> | <b>DATE:</b> {row['Date'][:10]}
 </p>
 <p style="opacity: 0.9; margin-top:10px;">{row['Description']}</p>
 <div style="margin-top:10px; padding-top:10px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.85em;">
@@ -234,13 +232,37 @@ else:
 </div>"""
                 st.markdown(card_html, unsafe_allow_html=True)
 
-            # AI Analysis Section
+            # --- 4. FLOATING CHATBOT ICON ---
+            st.markdown('<div class="floating-chat">', unsafe_allow_html=True)
+            with st.popover("💬"):
+                st.markdown("### 💬 Safety Advisor")
+                st.caption("General Work Site Safety & Security Assistant")
+                
+                if "messages" not in st.session_state:
+                    st.session_state.messages = []
+
+                for message in st.session_state.messages:
+                    with st.chat_message(message["role"]):
+                        st.markdown(message["content"])
+
+                if prompt := st.chat_input("Ask a safety question..."):
+                    st.session_state.messages.append({"role": "user", "content": prompt})
+                    with st.chat_message("user"):
+                        st.markdown(prompt)
+
+                    with st.chat_message("assistant"):
+                        with st.spinner("Thinking..."):
+                            response = get_safety_chatbot_response(prompt)
+                            st.markdown(response)
+                    st.session_state.messages.append({"role": "assistant", "content": response})
+            st.markdown('</div>', unsafe_allow_html=True)
+
+            # AI Audit Button
             st.markdown("---")
             if st.button("🤖 Run Advanced AI Fleet Audit"):
                 with st.spinner("Processing safety data..."):
                     result = analyze_incidents(incidents)
-                st.subheader("🧠 AI Intelligence Report")
                 st.info(result)
 
         else:
-            st.info("No safety logs found in the database.  ")
+            st.info("No safety logs found in the database.")

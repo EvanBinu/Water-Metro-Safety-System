@@ -81,3 +81,44 @@ def analyze_incidents(incidents):
     except Exception as e:
         st.warning("Groq API failed. Providing local summary instead.")
         return f"{local_analysis(incidents)}\n\n(Error Detail: {str(e)})"
+
+def get_safety_chatbot_response(user_query):
+    """General purpose chatbot for workplace safety and security."""
+    if not GROQ_API_KEY:
+        return "❌ GROQ_API_KEY not found in Streamlit secrets."
+
+    try:
+        client = OpenAI(
+            api_key=GROQ_API_KEY,
+            base_url="https://api.groq.com/openai/v1"
+        )
+
+        system_prompt = """
+        # ROLE
+        You are a Work Site Safety & Security Advisor for the Kochi Water Metro. 
+        Your expertise covers maritime security, electrical safety, passenger management, 
+        emergency response, and OSHA-standard work site safety.
+
+        # OBJECTIVE
+        Answer general questions about safety protocols, security measures, and preventive 
+        strategies. Be professional, concise, and prioritize human life above all.
+
+        # GUIDELINES
+        1. Provide accurate references to maritime standards (SOLAS, IMO) where applicable.
+        2. Use bullet points for checklists or step-by-step instructions.
+        3. If a user describes an active emergency, advise them to contact the command center immediately.
+        """
+
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_query}
+            ],
+            temperature=0.7,
+        )
+
+        return response.choices[0].message.content
+
+    except Exception as e:
+        return f"Sorry, I am having trouble connecting to the safety knowledge base. Error: {str(e)}"
