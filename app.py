@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import datetime
 import plotly.express as px
+import os
 
 from database import init_db, insert_incident, get_all_incidents
 from auth import create_default_users, login
@@ -13,6 +14,9 @@ from ai_analysis import analyze_incidents, get_safety_chatbot_response
 # -----------------------------
 init_db()
 create_default_users()
+UPLOAD_DIR = "uploaded_evidence"  # This defines the variable name
+if not os.path.exists(UPLOAD_DIR): # This creates the actual folder on your PC
+    os.makedirs(UPLOAD_DIR)
 
 st.set_page_config(page_title="Water Metro Safety", layout="wide")
 
@@ -191,19 +195,27 @@ else:
             description = st.text_area("Observations / Details")
             action_taken = st.text_area("Immediate Response Taken")
 
+            st.write("📸 **Evidence Upload**")
+            up_file = st.file_uploader("Upload Image/PDF", type=['png', 'jpg', 'jpeg', 'pdf'])
+
             if st.form_submit_button("Submit Report"):
-                insert_incident((terminal, incident_type, severity, description, action_taken, str(datetime.datetime.now())))
+                file_path = None
+                if up_file:
+                    file_path = os.path.join(UPLOAD_DIR, up_file.name)
+                    with open(file_path, "wb") as f:
+                        f.write(up_file.getbuffer())
+                insert_incident((terminal, incident_type, severity, description, action_taken, str(datetime.datetime.now()),file_path))
                 st.success("✅ Report Synced to Command Center.")
 
     # =====================================
     # ADMIN PANEL
     # =====================================
     elif st.session_state.role == "Admin":
-        st.subheader("📊 Fleet Safety Intelligence")
+        st.subheader("📊 Intelligent FRACAS")
         incidents = get_all_incidents()
 
         if incidents:
-            df = pd.DataFrame(incidents, columns=["ID", "Terminal", "Incident Type", "Severity", "Description", "Action Taken", "Date"])
+            df = pd.DataFrame(incidents, columns=["ID", "Terminal", "Incident Type", "Severity", "Description", "Action Taken", "Date","Evidence"])
 
             # --- 1. KPI METRICS ---
             m1, m2, m3, m4 = st.columns(4)
@@ -255,6 +267,29 @@ else:
 </div>
 </div>"""
                 st.markdown(card_html, unsafe_allow_html=True)
+                # VIEW UPLOADED EVIDENCE
+
+                # if row['Evidence'] and os.path.exists(row['Evidence']):
+                #     with st.expander("👁️ View Evidence"):
+                #         if row['Evidence'].lower().endswith(('.png', '.jpg', '.jpeg')):
+                #             st.image(row['Evidence'], use_container_width=True)
+                #         else:
+                #             with open(row['Evidence'], "rb") as f:
+                #                 st.download_button("📥 Download PDF", f, file_name=os.path.basename(row['Evidence']), key=f"feed_dl_{row['ID']}")
+                # st.write("")
+                # --- 4. Global Evidence Vault (OUTSIDE THE LOOP) ---
+            st.markdown("---")
+            st.write("### 📁 Evidence Explorer (All Files)")
+            all_files = [f for f in os.listdir(UPLOAD_DIR) if os.path.isfile(os.path.join(UPLOAD_DIR, f))]
+            
+            if all_files:
+                selected_filename = st.selectbox("Select file to download:", all_files, key="global_vault_selector")
+                if selected_filename:
+                    f_path = os.path.join(UPLOAD_DIR, selected_filename)
+                    with open(f_path, "rb") as f:
+                        st.download_button(f"Download {selected_filename}", f, file_name=selected_filename, key="vault_dl_btn")
+            else:
+                st.info("No files uploaded yet.")
 
             # --- 4. FLOATING CHATBOT ICON ---
             # The div wrapper is no longer strictly needed because CSS targets stPopover directly
