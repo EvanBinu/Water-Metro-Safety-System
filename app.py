@@ -182,30 +182,58 @@ else:
     # OFFICER PANEL
     # =====================================
     if st.session_state.role == "Officer":
+
         st.subheader("📝 New Incident Report")
 
         with st.form("incident_entry"):
             terminal = st.selectbox("Terminal Location", [
-                "High Court", "Vyttila", "Kakkanad", "Fort Kochi", 
-                "Vypin", "Bolgatty", "South Chittoor", "Cheranallur", 
+                "High Court", "Vyttila", "Kakkanad", "Fort Kochi",
+                "Vypin", "Bolgatty", "South Chittoor", "Cheranallur",
                 "Eloor", "Mulavukad North", "Willingdon Island", "Mattancherry"
             ])
-            incident_type = st.selectbox("Incident Category", ["Mechanical", "Electrical", "Injury", "Security", "Environmental"])
-            severity = st.selectbox("Severity Level", ["Low", "Medium", "High", "Critical"])
+
+            incident_type = st.selectbox(
+                "Incident Category",
+                ["Mechanical", "Electrical", "Injury", "Security", "Environmental"]
+            )
+
+            severity = st.selectbox(
+                "Severity Level",
+                ["Low", "Medium", "High", "Critical"]
+            )
+
             description = st.text_area("Observations / Details")
             action_taken = st.text_area("Immediate Response Taken")
 
-            st.write("📸 **Evidence Upload**")
+            st.write("📸 Evidence Upload")
             up_file = st.file_uploader("Upload Image/PDF", type=['png', 'jpg', 'jpeg', 'pdf'])
 
             if st.form_submit_button("Submit Report"):
+
                 file_path = None
+
                 if up_file:
-                    file_path = os.path.join(UPLOAD_DIR, up_file.name)
+                    # Create terminal-based folder
+                    terminal_folder = os.path.join(UPLOAD_DIR, terminal)
+                    os.makedirs(terminal_folder, exist_ok=True)
+
+                    file_path = os.path.join(terminal_folder, up_file.name)
+
                     with open(file_path, "wb") as f:
                         f.write(up_file.getbuffer())
-                insert_incident((terminal, incident_type, severity, description, action_taken, str(datetime.datetime.now()),file_path))
+
+                insert_incident((
+                    terminal,
+                    incident_type,
+                    severity,
+                    description,
+                    action_taken,
+                    str(datetime.datetime.now()),
+                    file_path
+                ))
+
                 st.success("✅ Report Synced to Command Center.")
+
 
     # =====================================
     # ADMIN PANEL
@@ -278,18 +306,52 @@ else:
                 #                 st.download_button("📥 Download PDF", f, file_name=os.path.basename(row['Evidence']), key=f"feed_dl_{row['ID']}")
                 # st.write("")
                 # --- 4. Global Evidence Vault (OUTSIDE THE LOOP) ---
+            # --- 4. Terminal-Based Evidence Explorer ---
             st.markdown("---")
-            st.write("### 📁 Evidence Explorer (All Files)")
-            all_files = [f for f in os.listdir(UPLOAD_DIR) if os.path.isfile(os.path.join(UPLOAD_DIR, f))]
-            
-            if all_files:
-                selected_filename = st.selectbox("Select file to download:", all_files, key="global_vault_selector")
-                if selected_filename:
-                    f_path = os.path.join(UPLOAD_DIR, selected_filename)
-                    with open(f_path, "rb") as f:
-                        st.download_button(f"Download {selected_filename}", f, file_name=selected_filename, key="vault_dl_btn")
+            st.write("### 📁 Evidence Explorer (By Terminal)")
+
+            if os.path.exists(UPLOAD_DIR):
+
+                terminal_folders = [
+                    folder for folder in os.listdir(UPLOAD_DIR)
+                    if os.path.isdir(os.path.join(UPLOAD_DIR, folder))
+                ]
+
+                if terminal_folders:
+
+                    selected_terminal = st.selectbox(
+                        "Select Terminal Folder",
+                        terminal_folders,
+                        key="terminal_folder_selector"
+                    )
+
+                    terminal_path = os.path.join(UPLOAD_DIR, selected_terminal)
+
+                    files = [
+                        f for f in os.listdir(terminal_path)
+                        if os.path.isfile(os.path.join(terminal_path, f))
+                    ]
+
+                    if files:
+                        for file_name in files:
+                            file_path = os.path.join(terminal_path, file_name)
+
+                            with open(file_path, "rb") as f:
+                                st.download_button(
+                                    label=f"📥 Download {file_name}",
+                                    data=f,
+                                    file_name=file_name,
+                                    key=f"{selected_terminal}_{file_name}"
+                                )
+                    else:
+                        st.info("No documents in this terminal folder yet.")
+
+                else:
+                    st.info("No terminal folders found.")
+
             else:
                 st.info("No files uploaded yet.")
+
 
             # --- 4. FLOATING CHATBOT ICON ---
             # The div wrapper is no longer strictly needed because CSS targets stPopover directly
