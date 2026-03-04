@@ -353,21 +353,47 @@ else:
                 st.info("No files uploaded yet.")
 
 
-            # --- 4. FLOATING CHATBOT ICON ---
+            # --- 5. FLOATING CHATBOT ICON ---
             # The div wrapper is no longer strictly needed because CSS targets stPopover directly
             with st.popover("💬"):
                 st.markdown("### 💬 Safety Advisor")
                 st.caption("General Work Site Safety & Security Assistant")
-                
+
                 if "messages" not in st.session_state:
                     st.session_state.messages = []
 
+                # Display previous messages
                 for message in st.session_state.messages:
                     with st.chat_message(message["role"]):
                         st.markdown(message["content"])
 
+                # -------- IMAGE UPLOAD --------
+                uploaded_image = st.file_uploader(
+                    "Upload an image for safety analysis",
+                    type=["png", "jpg", "jpeg"],
+                    key="chat_image"
+                )
+
+                if uploaded_image:
+                    st.image(uploaded_image, caption="Uploaded Image", use_container_width=True)
+
+                    if st.button("🔍 Analyze Image"):
+                        with st.spinner("Analyzing image..."):
+                            from ai_analysis import analyze_image_for_safety
+
+                            result = analyze_image_for_safety(uploaded_image)
+
+                            st.session_state.messages.append(
+                                {"role": "assistant", "content": result}
+                            )
+
+                            with st.chat_message("assistant"):
+                                st.markdown(result)
+
+                # -------- TEXT CHAT --------
                 if prompt := st.chat_input("Ask a safety question..."):
                     st.session_state.messages.append({"role": "user", "content": prompt})
+
                     with st.chat_message("user"):
                         st.markdown(prompt)
 
@@ -375,7 +401,10 @@ else:
                         with st.spinner("Thinking..."):
                             response = get_safety_chatbot_response(prompt)
                             st.markdown(response)
-                    st.session_state.messages.append({"role": "assistant", "content": response})
+
+                    st.session_state.messages.append(
+                        {"role": "assistant", "content": response}
+                    )
 
             # AI Audit Button
             st.markdown("---")

@@ -1,5 +1,7 @@
 streamlit
 openai
 pandas
-python-dotenv
 plotly
+torch
+torchvision
+pillow
