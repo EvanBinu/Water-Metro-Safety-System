@@ -141,7 +141,7 @@ with header_col2:
     st.markdown("""
 <div style="padding-top: 5px;">
 <h1 style="margin-bottom: 0px; color: #a2ffff !important;">Water Metro Safety System</h1>
-<p style="opacity: 0.8; font-size: 1.1em; letter-spacing: 1px;">KOCHI METRO RAIL LIMITED | AUDIT PORTAL</p>
+<p style="opacity: 0.8; font-size: 1.1em; letter-spacing: 1px;">KOCHI METRO RAIL LIMITED | SAFETY PORTAL</p>
 </div>
 """, unsafe_allow_html=True)
 
